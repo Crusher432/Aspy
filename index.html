@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Shopify Checkout Finder</title>
+</head>
+<body>
+  <h1>Checkout URL Hunter</h1>
+  <p>Target: <span id="site"></span></p>
+  <pre id="output">Loading...</pre>
+
+  <script>
+    // Example: your page is https://username.github.io/dodocase.com
+    const path = window.location.pathname.replace("/", "");
+    const targetSite = path || "dodocase.com";  // fallback
+    document.getElementById("site").innerText = targetSite;
+
+    async function getCheckout() {
+      try {
+        // Step 1: Fetch products.json from Shopify
+        const resp = await fetch(`https://${targetSite}/products.json`);
+        if (!resp.ok) throw new Error("Site blocked or invalid");
+        const data = await resp.json();
+
+        // Step 2: Get first product + cheapest variant
+        const product = data.products[0];
+        let cheapest = product.variants.reduce((a, b) => 
+          parseFloat(a.price) < parseFloat(b.price) ? a : b
+        );
+
+        // Step 3: Build checkout URL
+        let checkoutUrl = `https://${targetSite}/cart/${cheapest.id}:1`;
+
+        // Show output
+        document.getElementById("output").innerText = JSON.stringify({
+          product: product.title,
+          price: cheapest.price,
+          checkout: checkoutUrl
+        }, null, 2);
+      } catch (err) {
+        document.getElementById("output").innerText = "Error: " + err.message;
+      }
+    }
+
+    getCheckout();
+  </script>
+</body>
+</html>
